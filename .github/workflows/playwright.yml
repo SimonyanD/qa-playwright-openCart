@@ -1,36 +1,69 @@
 name: Playwright Tests
-# ☝️ Name of this automation pipeline
 
 on:
   push:
     branches: [main]
-# ☝️ Run this pipeline every time you push code to GitHub
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    # ☝️ Use a fresh Linux computer on GitHub to run tests
 
     steps:
-      - uses: actions/checkout@v4
-        # ☝️ Download your code from GitHub onto that computer
+      - name: Checkout qa-playwright
+        uses: actions/checkout@v4
+        # Download qa-playwright code
+
+      - name: Clone OpenCart
+        run: git clone https://github.com/opencart/opencart.git
+        # Download OpenCart code from GitHub
+        # Same as we did on our PC!
+
+      - name: Fix line endings
+        run: sed -i 's/\r//' opencart/docker/php/docker-opencart-entrypoint
+        # Fix Windows line endings issue
+        # Same problem we had on our PC!
+
+      - name: Start OpenCart with Docker
+        run: docker compose up -d
+        working-directory: ./opencart
+        # Start all containers from opencart folder
+
+      - name: Wait for OpenCart
+        run: sleep 40
+        # Wait 40 seconds for everything to start
+
+      - name: Install OpenCart database
+        run: |
+          docker exec opencart-php php /var/www/upload/install/cli_install.php install \
+            --username admin \
+            --password admin123 \
+            --email admin@example.com \
+            --http_server http://localhost/ \
+            --db_driver mysqli \
+            --db_hostname mysql \
+            --db_username opencart \
+            --db_password opencart \
+            --db_database opencart \
+            --db_port 3306 \
+            --db_prefix oc_
+        # Install database same way we did manually!
 
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-        # ☝️ Install Node.js (Playwright needs this to work)
+        # Install Node.js
 
       - name: Install dependencies
         run: npm install
-        # ☝️ Install all your project tools (like npm install on your PC)
+        # Install Playwright
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        # ☝️ Install Chrome browser on GitHub's computer
+        # Install Chrome
 
       - name: Run tests
         run: npx playwright test
-        # ☝️ Run all your tests!
+        # Run all tests!
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
@@ -38,4 +71,4 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-        # ☝️ Save the test report so you can download and see results
+        # Save report
