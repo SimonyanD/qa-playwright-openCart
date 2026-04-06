@@ -121,3 +121,68 @@ test('Login page has correct UI elements', async ({ page }) => {
   // Verify Login button is clickable (not disabled)
 
 });
+
+test('Admin can add a new product', async ({ page }) => {
+
+  const timestamp = Date.now();
+  // Generate unique number based on current time
+  // Ensures product name and SEO keyword are always unique
+
+  await page.goto('http://localhost/admin');
+  await page.getByRole('textbox', { name: 'Username' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin123');
+  await page.getByRole('button', { name: ' Login' }).click();
+  await page.waitForURL(/dashboard/);
+  await page.locator('#modal-developer').getByRole('button').click();
+  await page.getByRole('link', { name: ' Catalog ' }).click();
+  await page.getByRole('link', { name: 'Products' }).click();
+  await page.getByRole('link', { name: '+' }).click();
+
+  await page.getByRole('textbox', { name: '* Product Name' }).fill(`Test Product ${timestamp}`);
+  await page.getByRole('textbox', { name: '* Meta Tag Title' }).fill(`Test Product ${timestamp}`);
+
+  await page.getByRole('tab', { name: 'Data' }).click();
+  await page.getByRole('textbox', { name: '* Model' }).fill('TEST-001');
+
+  await page.getByRole('tab', { name: 'SEO' }).click();
+  await page.getByRole('textbox', { name: 'Keyword' }).fill(`test-product-${timestamp}`);
+  // Unique SEO keyword every run!
+
+  await page.getByTitle('Save').click();
+  await expect(page.locator('body')).toContainText('success');
+  // Verify success message
+
+});
+
+test('Admin cannot add product with duplicate SEO keyword', async ({ page }) => {
+
+  await page.goto('http://localhost/admin');
+  await page.getByRole('textbox', { name: 'Username' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin123');
+  await page.getByRole('button', { name: ' Login' }).click();
+  await page.waitForURL(/dashboard/);
+  await page.locator('#modal-developer').getByRole('button').click();
+  await page.getByRole('link', { name: ' Catalog ' }).click();
+  await page.getByRole('link', { name: 'Products' }).click();
+  await page.getByRole('link', { name: '+' }).click();
+
+  await page.getByRole('textbox', { name: '* Product Name' }).fill('Duplicate Product');
+  // Product name
+
+  await page.getByRole('textbox', { name: '* Meta Tag Title' }).fill('Duplicate Product');
+  // Meta tag title
+
+  await page.getByRole('tab', { name: 'Data' }).click();
+  await page.getByRole('textbox', { name: '* Model' }).fill('TEST-001');
+
+  await page.getByRole('tab', { name: 'SEO' }).click();
+  await page.getByRole('textbox', { name: 'Keyword' }).fill('test-product');
+  // Use EXISTING keyword on purpose - should fail!
+
+  await page.getByTitle('Save').click();
+
+  await expect(page.locator('body')).toContainText('SEO URL must be unique');
+  // Verify error message appears
+  // This confirms duplicate SEO keyword is correctly rejected!
+
+});
