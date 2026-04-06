@@ -144,20 +144,21 @@ test('Admin cannot add product with duplicate SEO keyword', async ({ page }) => 
   await page.getByTitle('Save').click();
   // First product created with keyword 'duplicate-test'
 
-  // SECOND: Try to create another product with SAME keyword
-  await page.getByRole('link', { name: ' Catalog ' }).click();
-  await page.getByRole('link', { name: 'Products' }).click();
-  await page.getByRole('link', { name: '+' }).click();
+  // SECOND: Navigate directly to add new product page
+  await page.goto('http://localhost/admin/index.php?route=catalog/product.form');
+  // Go directly to URL instead of clicking menu
+  // Avoids JSON response page problem!
+
   await page.getByRole('textbox', { name: '* Product Name' }).fill('Second Product');
   await page.getByRole('textbox', { name: '* Meta Tag Title' }).fill('Second Product');
   await page.getByRole('tab', { name: 'Data' }).click();
   await page.getByRole('textbox', { name: '* Model' }).fill('MODEL-002');
   await page.getByRole('tab', { name: 'SEO' }).click();
   await page.getByRole('textbox', { name: 'Keyword' }).fill('duplicate-test');
-  // Same keyword! Should fail!
+  // Same keyword as first product - should fail!
+
   await page.getByTitle('Save').click();
 
   await expect(page.locator('body')).toContainText('SEO URL must be unique');
-  // Now this should work because keyword IS duplicate!
-
+  // Verify duplicate keyword error appears!
 });
