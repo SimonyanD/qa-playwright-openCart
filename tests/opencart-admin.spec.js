@@ -144,10 +144,18 @@ test('Admin cannot add product with duplicate SEO keyword', async ({ page }) => 
   await page.getByTitle('Save').click();
   // First product created with keyword 'duplicate-test'
 
-  // SECOND: Navigate directly to add new product page
-  await page.goto('http://localhost/admin/index.php?route=catalog/product.form');
-  // Go directly to URL instead of clicking menu
-  // Avoids JSON response page problem!
+  // Login again for second product
+  await page.goto('http://localhost/admin');
+  await page.getByRole('textbox', { name: 'Username' }).fill('admin');
+  await page.getByRole('textbox', { name: 'Password' }).fill('admin123');
+  await page.getByRole('button', { name: ' Login' }).click();
+  await page.waitForURL(/dashboard/);
+  await page.locator('#modal-developer').getByRole('button').click();
+
+  // Now navigate to add product
+  await page.getByRole('link', { name: ' Catalog ' }).click();
+  await page.getByRole('link', { name: 'Products' }).click();
+  await page.getByRole('link', { name: '+' }).click();
 
   await page.getByRole('textbox', { name: '* Product Name' }).fill('Second Product');
   await page.getByRole('textbox', { name: '* Meta Tag Title' }).fill('Second Product');
@@ -155,10 +163,7 @@ test('Admin cannot add product with duplicate SEO keyword', async ({ page }) => 
   await page.getByRole('textbox', { name: '* Model' }).fill('MODEL-002');
   await page.getByRole('tab', { name: 'SEO' }).click();
   await page.getByRole('textbox', { name: 'Keyword' }).fill('duplicate-test');
-  // Same keyword as first product - should fail!
-
   await page.getByTitle('Save').click();
 
   await expect(page.locator('body')).toContainText('SEO URL must be unique');
-  // Verify duplicate keyword error appears!
 });
